@@ -93,15 +93,18 @@ int main(int argc, char** argv)
     
     TRISAbits.RA1=0; //output
     LED=1;
-    
+    char error=0;
+    unsigned char IP_ADDRESS[16];
     init_uart();
     
-    if(esp8266_start()==0)
-    {
-        LED=0;
-    }
-    else{}
- 
+    esp8266_restart();
+   
+   
+    //esp8266_mode(STATION);
+    esp8266_connect();
+    //IP_ADDRESS[16]=esp8266_get_ip(IP_ADDRESS[16]);
+    //esp8266_disconnect();
+    
     CloseUSART();  
     while(1);
     return (EXIT_SUCCESS);
