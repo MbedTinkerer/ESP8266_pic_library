@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <p18f4550.h>
+#include "esp8266.h"
+#include "uart.h"
 #include <plib/usart.h>
 
 // PIC18F4550 Configuration Bit Settings
@@ -80,10 +82,7 @@
 
 #define LED LATAbits.LA1
 
-void interrupt SerialRxPinInterrupt(void);
-char reception[100];
-char i=0;
-
+void Delay1Second();
 
 int main(int argc, char** argv) 
 {
@@ -95,54 +94,16 @@ int main(int argc, char** argv)
     TRISAbits.RA1=0; //output
     LED=1;
     
-    /*UART Variables*/
-    unsigned char UARTConfig = 0, baud = 0;
+    init_uart();
     
-    /*UART PINS*/
-    TRISCbits.RC6 = 0; //TX pin set as output
-    TRISCbits.RC7 = 1; //RX pin set as input 
-    
-    /*UART Configuration*/
-    UARTConfig = USART_TX_INT_OFF & USART_RX_INT_ON & USART_ASYNCH_MODE & USART_EIGHT_BIT & USART_BRGH_HIGH ;
-    baud=51; //Formula 16(X+1) = Fosc/Baud Rate
-    OpenUSART(UARTConfig,baud); //9600
-    
-    /*Ajout de l'interruption sur le port RX*/
-    RCIF = 0; //reset RX pin flag
-    RCIP = 0; //Not high priority
-    RCIE = 1; //Enable RX interrupt
-    PEIE = 1; //Enable pheripheral interrupt (serial port is a pheripheral)
-    ei();   //(INTCONbits.GIE = 1)
-    
-    //Test TX
-    int j;
-    for(j=0;j<5;j++)
+    if(esp8266_start()==0)
     {
-    putsUSART("TEST\r\n");
+        LED=0;
     }
-    
-    //Test RX
-    while(strcmp(reception,"TEST\r\n")!=0);
-    LED=0;
-    
+    else{}
+ 
     CloseUSART();  
     while(1);
     return (EXIT_SUCCESS);
 }
 
-void interrupt SerialRxPinInterrupt(void)
-{
-    LED=1;
-    unsigned char data;
-    //check if the interrupt is caused by RX pin
-    if(PIR1bits.RCIF == 1)
-    {
-    do{    
-    while(!DataRdyUSART());// Wait for data to be received
-
-    data = getcUSART();    // Get a character from the USART
-    reception[i] = data;
-    i++;              
-    }while(PIR1bits.RCIF);
-    }
-}
